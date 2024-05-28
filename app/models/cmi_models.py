@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, DECIMAL, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 
 
-Base = declarative_base() # no toque nada de conexión
+Base = declarative_base()
 
 class CMISet(Base):
     __tablename__ = 'CMISet'
