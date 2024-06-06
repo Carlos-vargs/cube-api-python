@@ -94,7 +94,7 @@ class FactTableEnvio(Base):
     AreaEnvioId = Column(Integer, ForeignKey('DimensionAreaEnvio.AreaEnvioId'))
     ClienteId = Column(Integer, ForeignKey('DimensionCliente.ClienteId'))
     ProductoId = Column(Integer, ForeignKey('DimensionProducto.ProductoId'))
-    DATAKEY = Column(Integer, ForeignKey('DimensionTiempo.DateId'))
+    DATEKEY = Column(Integer, ForeignKey('DimensionTiempo.DateId'))
     UbicacionId = Column(Integer, ForeignKey('DimensionUbicacion.UbicacionId'))
     Ofertasld = Column(Integer, ForeignKey('DimensionOfertas.Ofertasid'))
     EmpresaEnvio = Column(String(100), default='Unknown')
