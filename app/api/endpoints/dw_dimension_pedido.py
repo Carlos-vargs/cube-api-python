@@ -13,10 +13,10 @@ def read_dimension_pedidos(db: Session = Depends(get_db_dw)):
     return pedidos
 
 
-@router.get("/{pedidold}", response_model=DimensionPedidoSchema)
-def read_dimension_pedido(pedidold: int, db: Session = Depends(get_db_dw)):
+@router.get("/{pedidoId}", response_model=DimensionPedidoSchema)
+def read_dimension_pedido(pedidoId: int, db: Session = Depends(get_db_dw)):
     pedido = db.query(DimensionPedido).filter(
-        DimensionPedido.Pedidold == pedidold).first()
+        DimensionPedido.PedidoId == pedidoId).first()
     if not pedido:
         raise HTTPException(
             status_code=404, detail="DimensionPedido not found")
@@ -32,10 +32,10 @@ def create_dimension_pedido(pedido: DimensionPedidoSchema, db: Session = Depends
     return new_pedido
 
 
-@router.put("/{pedidold}", response_model=DimensionPedidoSchema)
-def update_dimension_pedido(pedidold: int, pedido: DimensionPedidoSchema, db: Session = Depends(get_db_dw)):
+@router.put("/{pedidoId}", response_model=DimensionPedidoSchema)
+def update_dimension_pedido(pedidoId: int, pedido: DimensionPedidoSchema, db: Session = Depends(get_db_dw)):
     db_pedido = db.query(DimensionPedido).filter(
-        DimensionPedido.Pedidold == pedidold).first()
+        DimensionPedido.PedidoId == pedidoId).first()
     if not db_pedido:
         raise HTTPException(
             status_code=404, detail="DimensionPedido not found")
@@ -45,10 +45,10 @@ def update_dimension_pedido(pedidold: int, pedido: DimensionPedidoSchema, db: Se
     return db_pedido
 
 
-@router.delete("/{pedidold}", status_code=204)
-def delete_dimension_pedido(pedidold: int, db: Session = Depends(get_db_dw)):
+@router.delete("/{pedidoId}", status_code=204)
+def delete_dimension_pedido(pedidoId: int, db: Session = Depends(get_db_dw)):
     db_pedido = db.query(DimensionPedido).filter(
-        DimensionPedido.Pedidold == pedidold).first()
+        DimensionPedido.PedidoId == pedidoId).first()
     if not db_pedido:
         raise HTTPException(
             status_code=404, detail="DimensionPedido not found")

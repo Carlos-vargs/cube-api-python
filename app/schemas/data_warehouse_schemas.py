@@ -4,13 +4,13 @@ from typing import Optional
 
 
 class DimensionPedidoSchema(BaseModel):
-    Pedidold: Optional[int] = None
+    PedidoId: Optional[int] = None
     NombreMetodoPago: str = 'Unknown'
     DireccionPago: str = 'Unknown'
     PrecioUnitario: float
     Cantidad: int
     NombreEstado: str = 'Unknown'
-    Fechalnicio: datetime
+    FechaInicio: datetime
     FechaFin: datetime
 
     class Config:
@@ -41,7 +41,7 @@ class DimensionTiempoSchema(BaseModel):
 
 
 class DimensionClienteSchema(BaseModel):
-    Clienteld: Optional[int] = None
+    ClienteId: Optional[int] = None
     Nombre: str = 'Unknown'
     Apellido: str = 'Unknown'
     Email: str = 'Unknown'
@@ -52,7 +52,7 @@ class DimensionClienteSchema(BaseModel):
     Estado: str = 'Unknown'
     CodigoPostal: int
     PuntosFidelidad: int
-    Fechalnicio: datetime
+    FechaInicio: datetime
     FechaFin: datetime
 
     class Config:
@@ -67,7 +67,7 @@ class DimensionOfertasSchema(BaseModel):
     CodDescuento: int
     FechaLanzamiento: datetime
     FechaCaducidad: datetime
-    Fechalnicio: datetime
+    FechaInicio: datetime
     FechaFin: datetime
 
     class Config:
@@ -75,10 +75,10 @@ class DimensionOfertasSchema(BaseModel):
 
 
 class DimensionAreaEnvioSchema(BaseModel):
-    AreaEnviold: Optional[int] = None
+    AreaEnvioId: Optional[int] = None
     NombreArea: str = 'Unknown'
     CostoEnvio: float
-    Fechalnicio: datetime
+    FechaInicio: datetime
     FechaFin: datetime
 
     class Config:
@@ -86,14 +86,14 @@ class DimensionAreaEnvioSchema(BaseModel):
 
 
 class DimensionProductoSchema(BaseModel):
-    Productold: Optional[int] = None
+    ProductoId: Optional[int] = None
     Nombre: str = 'Unknown'
     FechaAgregado: datetime
     Dimensiones: str = 'Unknown'
     Peso: float
     Nombrecategoria: str = 'Unknown'
     NombreMarca: str = 'Unknown'
-    Fechalnicio: datetime
+    FechaInicio: datetime
     FechaFin: datetime
 
     class Config:
@@ -102,14 +102,14 @@ class DimensionProductoSchema(BaseModel):
 
 class FactTableEnvioSchema(BaseModel):
     EnviosID: Optional[int] = None
-    Pedidold: int
+    PedidoId: int
     OfertasId: int
-    AreaEnviold: int
-    Clienteld: int
-    Productold: int
-    DATAKEY: int
-    Ubicacionld: int
-    Ofertasld: int
+    AreaEnvioId: int
+    ClienteId: int
+    ProductoId: int
+    DATEKEY: int
+    UbicacionId: int
+    OfertasId: int
     EmpresaEnvio: str = 'Unknown'
     MetodoEnvio: str = 'Unknown'
     ValidFrom: datetime
