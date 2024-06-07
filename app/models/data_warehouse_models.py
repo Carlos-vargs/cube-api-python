@@ -11,7 +11,7 @@ class DimensionPedido(Base):
     PrecioUnitario = Column(DECIMAL(10, 2), nullable=False)
     Cantidad = Column(Integer, nullable=False)
     NombreEstado = Column(String(100), default='Unknown')
-    Fechalnicio = Column(DateTime)
+    FechaInicio = Column(DateTime)
     FechaFin = Column(DateTime)
 
 
