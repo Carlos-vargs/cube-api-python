@@ -75,7 +75,7 @@ def ViewDf(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     return df.to_dict(orient='records')
 
-@router.get("/Histograma")
+@router.get("/histograma")
 def get_histograma(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
@@ -85,7 +85,7 @@ def get_histograma(db: Session = Depends(get_db_dw)):
     
     return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
 
-@router.get("/Box-Plot")
+@router.get("/box-Plot")
 def get_boxplot(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
@@ -95,7 +95,7 @@ def get_boxplot(db: Session = Depends(get_db_dw)):
     
     return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
 
-@router.get("/Scatter-Costo-Envio")
+@router.get("/scatter-costo-envio")
 def get_scatter_costo_envio(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
@@ -107,7 +107,7 @@ def get_scatter_costo_envio(db: Session = Depends(get_db_dw)):
     
     return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
 
-@router.get("/Scatter-Costo-Final")
+@router.get("/scatter-costo-final")
 def get_scatter_costo_final(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
@@ -130,7 +130,7 @@ def get_heat_map(db: Session = Depends(get_db_dw)):
     
     return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
 
-@router.get("/Correlation")
+@router.get("/correlation")
 def get_correlation(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
