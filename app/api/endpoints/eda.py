@@ -1,10 +1,10 @@
 import pandas as pd
+import numpy as np
+from scipy import stats  
 from sqlalchemy.orm import Session
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy import stats  # For handling outliers
 from fastapi import APIRouter, Depends, Response
 from app.database import get_db_dw
+from fastapi.responses import JSONResponse
 from io import BytesIO
 from ...models.data_warehouse_models import (
     FactEnvio, DimPedido, DimCliente, DimOfertas, DimAreaEnvio, DimProducto, DimUbicacion
@@ -35,7 +35,6 @@ def queryData(db: Session):
      .join(DimUbicacion, FactEnvio.UbicacionKey == DimUbicacion.UbicacionKey).all()
 
 def createDataframe(result):
-
     df = pd.DataFrame(result).set_index("Envio Key")
     df['Costo Envio'] = pd.to_numeric(df['Costo Envio'], errors='coerce')
     df['Precio Unitario'] = pd.to_numeric(df['Precio Unitario'], errors='coerce')
@@ -59,85 +58,108 @@ def getDataFrame(db: Session):
     result = queryData(db)
     return createDataframe(result)
 
-def plotToResponse(plotFunc):
-    buf = BytesIO()
-    plotFunc(buf)
-    buf.seek(0)
-    return Response(content=buf.read(), media_type="image/png")
-
-@router.get("/df/test")
+@router.get("/df/test-schema")
 def dfTest(db: Session = Depends(get_db_dw)):
-    df = getDataFrame(db)
-    return print(df.dtypes)
+    df = getDataFrame(db) 
+    print(df.dtypes)
+    return {"message": "Test result printed in the terminal"}
 
 @router.get("/df", response_model=list)
 def ViewDf(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     return df.to_dict(orient='records')
 
-@router.get("/histograma")
-def get_histograma(db: Session = Depends(get_db_dw)):
+@router.get("/histograma-costo-envio")
+async def get_sdchistograma(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
-    
-    plt.figure(figsize=(10, 6))
-    sns.histplot(df['Costo Envio'], kde=True)
-    plt.title('Histograma de Costo Envio')
-    
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    data = df['Costo Envio'].to_list() 
+    # https://www.highcharts.com/demo/highcharts/histogram
+    return JSONResponse(content=data)
 
-@router.get("/box-Plot")
-def get_boxplot(db: Session = Depends(get_db_dw)):
+@router.get("/box-plot-costo-final")
+async def get_boxplot(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
-    plt.figure(figsize=(10, 6))
-    sns.boxplot(x=df['Costo Final'])
-    plt.title('Boxplot de Costo Final')
+    costs = df['Costo Final']
     
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    min_val = np.min(costs)
+    q1 = np.percentile(costs, 25)
+    median = np.percentile(costs, 50)
+    q3 = np.percentile(costs, 75)
+    max_val = np.max(costs)
+    mean_val = np.mean(costs)
+    
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    outliers = costs[(costs < lower_bound) | (costs > upper_bound)].tolist()
+    
+    data = {
+        "boxplot": [min_val, q1, median, q3, max_val],
+        "mean": mean_val,
+        "outliers": [[0, outlier] for outlier in outliers] 
+    }
+    
+    # https://www.highcharts.com/demo/highcharts/box-plot
+    
+    return JSONResponse(content=data)
 
-@router.get("/scatter-costo-envio")
-def get_scatter_costo_envio(db: Session = Depends(get_db_dw)):
+@router.get("/scatter-descuento")
+async def get_scatter_descuento(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=df.index, y=df['Costo Envio'])
-    plt.xlabel('Envio Key')
-    plt.ylabel('Costo Envio')
-    plt.title('Scatter Plot of Costo Envio')
+    descuento = df['Descuento'].to_list()
     
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    data = [[i,val] for i, val in enumerate(descuento)]
+    # https://www.highcharts.com/demo/highcharts/scatter
+    return JSONResponse(content=data)
 
 @router.get("/scatter-costo-final")
-def get_scatter_costo_final(db: Session = Depends(get_db_dw)):
+async def get_scatter_costo_final(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
     
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=df.index, y=df['Costo Final'])
-    plt.xlabel('Envio Key')
-    plt.ylabel('Costo Final')
-    plt.title('Scatter Plot of Costo Final')
+    CoastFinal = df['Costo Final'].to_list()
     
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    data = [[i,val] for i, val in enumerate(CoastFinal)]
+    # https://www.highcharts.com/demo/highcharts/scatter
+    return JSONResponse(content=data)
 
 @router.get("/heat-map")
-def get_heat_map(db: Session = Depends(get_db_dw)):
+async def get_heat_map(db: Session = Depends(get_db_dw)):   
     df = getDataFrame(db)
+    heatmap_data = df[['Puntos de fidelidad', 'Costo Envio', 'Precio Unitario', 'Cantidad', 'Descuento', 'Costo Final']]
     
-    plt.figure(figsize=(10, 8))
-    correlation_matrix = df[['Puntos de fidelidad', 'Costo Envio', 'Precio Unitario', 'Cantidad', 'Descuento', 'Costo Final']].corr()
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
-    plt.title("Pearson's Correlation Heat Map")
+    correlation_matrix = heatmap_data.corr()
+    heatmapJson = []
+    for i in range(len(correlation_matrix.columns)):
+        for j in range(len(correlation_matrix.columns)):
+            heatmapJson.append([i, j, correlation_matrix.iat[i, j]])
+            
+        # https://www.highcharts.com/demo/highcharts/heatmap
     
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    return JSONResponse(content={
+        "xAxisCategories": correlation_matrix.columns.tolist(),
+        "yAxisCategories": correlation_matrix.index.tolist(),
+        "heatmapData": heatmapJson
+    })
 
 @router.get("/correlation")
-def get_correlation(db: Session = Depends(get_db_dw)):
+async def get_correlation(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
-    
     contingency_table = pd.crosstab(df['Producto'], df['Area'])
     chi2, p, dof, expected = stats.chi2_contingency(contingency_table)
-    plt.figure(figsize=(14, 10))
-    sns.heatmap(contingency_table, annot=True, cmap='coolwarm', linewidths=0.5, fmt='d')
-    plt.title('Tabla de Contingencia entre Producto y Area')
     
-    return plotToResponse(lambda buf: plt.savefig(buf, format='png'))
+    heatmapJson = []
+    for i in range(len(contingency_table.index)):
+        for j in range(len(contingency_table.columns)):
+            heatmapJson.append([int(i), int(j), int(contingency_table.iat[i, j])])
+    
+    # https://www.highcharts.com/demo/highcharts/heatmap
+
+    return JSONResponse(content={
+        "xAxisCategories": contingency_table.columns.astype(str).tolist(),
+        "yAxisCategories": contingency_table.index.astype(str).tolist(),
+        "heatmapData": heatmapJson  
+    })
+
+    
