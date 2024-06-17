@@ -9,6 +9,8 @@ from io import BytesIO
 from ...models.data_warehouse_models import (
     FactEnvio, DimPedido, DimCliente, DimOfertas, DimAreaEnvio, DimProducto, DimUbicacion
 )
+from datetime import datetime
+
 
 router = APIRouter()
 
@@ -182,3 +184,32 @@ async def get_correlation(db: Session = Depends(get_db_dw)):
         "yAxisCategories": contingency_table.index.astype(str).tolist(),
         "heatmapData": heatmapJson
     })
+
+
+@router.get("/describe", response_model=list)
+async def get_describe(db: Session = Depends(get_db_dw)):
+    df = getDataFrame(db)
+    description = df.describe(include='all').reset_index()
+    description_list = description.to_dict(orient='records')
+
+    for record in description_list:
+        for key, value in record.items():
+            if isinstance(value, (pd.Timestamp, datetime)):
+                record[key] = value.isoformat() if pd.notnull(value) else None
+            elif pd.isna(value):
+                record[key] = None
+    
+    return description_list
+
+@router.get("/head")
+async def get_head(db: Session = Depends(get_db_dw)):
+    pass
+
+
+@router.get("/tail")
+async def get_tail(db: Session = Depends(get_db_dw)):
+    pass
+
+@router.get("/tabla-contigencia")
+async def get_tail(db: Session = Depends(get_db_dw)):
+    pass
