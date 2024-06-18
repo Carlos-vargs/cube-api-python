@@ -17,17 +17,17 @@ router = APIRouter()
 
 def queryData(db: Session):
     return db.query(
-        FactEnvio.EnvioKey.label('Envio Key'),
-        (DimCliente.Nombre + " " + DimCliente.Apellido).label('Full Name'),
-        DimCliente.PuntosFidelidad.label('Puntos de fidelidad'),
-        FactEnvio.EmpresaEnvio.label('Empresa Envio'),
+        FactEnvio.EnvioKey.label('EnvioKey'),
+        (DimCliente.Nombre + " " + DimCliente.Apellido).label('FullName'),
+        DimCliente.PuntosFidelidad.label('PuntosFidelidad'),
+        FactEnvio.EmpresaEnvio.label('EmpresaEnvio'),
         DimAreaEnvio.Area,
-        FactEnvio.MetodoEnvio.label('Metodo Envio'),
-        DimAreaEnvio.CostoEnvio.label('Costo Envio'),
+        FactEnvio.MetodoEnvio.label('MetodoEnvio'),
+        DimAreaEnvio.CostoEnvio.label('CostoEnvio'),
         DimProducto.Nombre.label('Producto'),
-        DimPedido.PrecioUnitario.label('Precio Unitario'),
+        DimPedido.PrecioUnitario.label('PrecioUnitario'),
         DimPedido.Cantidad,
-        DimPedido.MetodoPago.label('Metodo Pago'),
+        DimPedido.MetodoPago.label('MetodoPago'),
         DimOfertas.Nombre.label('Oferta'),
         DimOfertas.Descuento,
     ).join(DimPedido, FactEnvio.PedidoKey == DimPedido.PedidoKey) \
@@ -39,24 +39,26 @@ def queryData(db: Session):
 
 
 def createDataframe(result):
-    df = pd.DataFrame(result).set_index("Envio Key")
-    df['Costo Envio'] = pd.to_numeric(df['Costo Envio'], errors='coerce')
-    df['Precio Unitario'] = pd.to_numeric(
-        df['Precio Unitario'], errors='coerce')
+    df = pd.DataFrame(result).set_index("EnvioKey")
+    df['CostoEnvio'] = pd.to_numeric(df['CostoEnvio'], errors='coerce')
+    df['PrecioUnitario'] = pd.to_numeric(
+        df['PrecioUnitario'], errors='coerce')
     df['Descuento'] = pd.to_numeric(df['Descuento'], errors='coerce')
 
     df['Area'] = df['Area'].astype('category')
     df['Producto'] = df['Producto'].astype('category')
-    df['Metodo Pago'] = df['Metodo Pago'].astype('category')
+    df['MetodoPago'] = df['MetodoPago'].astype('category')
     df['Oferta'] = df['Oferta'].astype('category')
 
-    df['Costo Final'] = (
-        (df['Cantidad'] * df['Precio Unitario'] +
-         df['Costo Envio']) * (1 - df['Descuento'] / 100)
+    df['CostoFinal'] = (
+        (df['Cantidad'] * df['PrecioUnitario'] +
+         df['CostoEnvio']) * (1 - df['Descuento'] / 100)
     ).round(2)
 
     df.drop_duplicates(inplace=True)
     df.dropna(inplace=True)
+    
+
 
     return df
 
@@ -82,7 +84,7 @@ def ViewDf(db: Session = Depends(get_db_dw)):
 @router.get("/histograma-costo-envio")
 async def get_sdchistograma(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
-    data = df['Costo Envio'].to_list()
+    data = df['CostoEnvio'].to_list()
     # https://www.highcharts.com/demo/highcharts/histogram
     return JSONResponse(content=data)
 
@@ -91,8 +93,8 @@ async def get_sdchistograma(db: Session = Depends(get_db_dw)):
 async def get_boxplot(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
 
-    columns = ['Costo Final', 'Descuento',
-               'Cantidad', 'Costo Envio', 'Precio Unitario']
+    columns = ['CostoFinal', 'Descuento',
+               'Cantidad', 'CostoEnvio', 'PrecioUnitario']
     data = {}
 
     for column in columns:
@@ -137,7 +139,7 @@ async def get_scatter_descuento(db: Session = Depends(get_db_dw)):
 async def get_scatter_costo_final(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
 
-    CoastFinal = df['Costo Final'].to_list()
+    CoastFinal = df['CostoFinal'].to_list()
 
     data = [[i, val] for i, val in enumerate(CoastFinal)]
     # https://www.highcharts.com/demo/highcharts/scatter
@@ -147,8 +149,8 @@ async def get_scatter_costo_final(db: Session = Depends(get_db_dw)):
 @router.get("/heat-map")
 async def get_heat_map(db: Session = Depends(get_db_dw)):
     df = getDataFrame(db)
-    heatmap_data = df[['Puntos de fidelidad', 'Costo Envio',
-                       'Precio Unitario', 'Cantidad', 'Descuento', 'Costo Final']]
+    heatmap_data = df[['PuntosFidelidad', 'CostoEnvio',
+                       'PrecioUnitario', 'Cantidad', 'Descuento', 'CostoFinal']]
 
     correlation_matrix = heatmap_data.corr()
     heatmapJson = []
@@ -203,13 +205,37 @@ async def get_describe(db: Session = Depends(get_db_dw)):
 
 @router.get("/head")
 async def get_head(db: Session = Depends(get_db_dw)):
-    pass
+    df = getDataFrame(db)
+    data = df.head(11)
+    return data.to_dict(orient='records')
 
 
 @router.get("/tail")
 async def get_tail(db: Session = Depends(get_db_dw)):
-    pass
+    df = getDataFrame(db)
+    data = df.tail(11)
+    return data.to_dict(orient='records')
 
-@router.get("/tabla-contigencia")
-async def get_tail(db: Session = Depends(get_db_dw)):
-    pass
+
+@router.get("/info")
+async def get_dataset_overview(db: Session = Depends(get_db_dw)):
+    df = getDataFrame(db)
+
+    num_columns = df.shape[1]
+    num_rows = df.shape[0]
+    num_missing = df.isna().sum().sum()
+    missing_percentage = (num_missing / (num_rows * num_columns)) * 100
+    num_duplicates = df.duplicated().sum()
+    duplicate_percentage = (num_duplicates / num_rows) * 100
+
+    overview = {
+        "Número de Columnas": int(num_columns),
+        "Número de Filas": int(num_rows),
+        "Celdas con Datos Faltantes": int(num_missing),
+        "Celdas con Datos Faltantes (%)": float(missing_percentage),
+        "Filas Duplicadas": int(num_duplicates),
+        "Filas Duplicadas (%)": float(duplicate_percentage),
+    }
+
+
+    return overview
